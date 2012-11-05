@@ -16,7 +16,7 @@ type mymap = Idmap
 
 type env =   { var :(string ,c_type) Hashtbl.t ;mutable structure : dvlist Idmap.t ;mutable union : dvlist Idmap.t} 
 
-type funt = {retour : c_type ; fdvl : dvlist ; local : env }
+type funt = {retour : c_type ; fdvl : dvlist  }
 
 let glob = { var =  Hashtbl.create 1007; structure = Idmap.empty ; union = Idmap.empty }
 let funglob =ref Idmap.empty
@@ -90,15 +90,17 @@ let unst_val = function
   |_ -> "null"
 
 let rec equal n1 n2 =
-  match n1 with
-  |Tnull       -> num n2   
-  |Tvoid       -> n2 = Tvoid
-  |Tint        -> easy n2
-  |Tchar       -> easy n2
-  |Tpointer p  -> ((is_pointer n2) && (equal p (valeur n2))) || (n2 = Tnull) || (n2 = Tpointer Tvoid)
-  |Tstruct d1   ->(is_struct n2) && (d1.node =  (unst_val n2))
-  |Tunion d1    -> (is_union n2) && (d1.node =  (unst_val n2))
-  |_ -> false
+  let intern n1 n2 =
+    match n1 with
+      |Tnull       -> num n2   
+      |Tvoid       -> n2 = Tvoid
+      |Tint        -> easy n2
+      |Tchar       -> easy n2
+      |Tpointer p  -> (n2 = Tpointer Tvoid)||((is_pointer n2) && (equal p (valeur n2))) || (n2 = Tnull) 
+      |Tstruct d1   ->(is_struct n2) && (d1.node =  (unst_val n2))
+      |Tunion d1    -> (is_union n2) && (d1.node =  (unst_val n2))
+      |_ -> false
+  in (intern n1 n2) || (intern n2 n1)
 
 let isaccesvalid e x env = 
   match e with 
@@ -245,7 +247,7 @@ let rec type_expr e env =
 	if (arit bop) then (* artihmetiques logiques et pointeurs*)
 	  begin	
 	    let returnarith =
-	      if (equal t1.loc t2.loc) && (t1.loc = Tint) then
+	      if (equal t1.loc t2.loc) && (equal t1.loc Tint) then
 		{node = Ebinop(bop,t1,t2); loc = Tint}	 
 	      else 
 		error l " The type must be the same and equal to INT"
@@ -460,11 +462,11 @@ and
 	  in
 	 
 	  let local = {var = localv ; structure = Idmap.empty ; union = Idmap.empty}
-	  in
-	  let nbl = type_block ibk local
-	  in
+	  in	 
 	  begin
-	    funglob := Idmap.add id.node {retour = t;fdvl = dvl; local = local} !funglob;
+	    funglob := Idmap.add id.node {retour = t;fdvl = dvl} !funglob;
+	     let nbl = type_block ibk local
+	     in
 	    Dfun (t,id,dvl,nbl);
 	   
 	  end
@@ -488,7 +490,7 @@ let () =
   in
   begin
     Hashtbl.add local.var id Tint ;
-    funglob := Idmap.add f {retour = Tint;fdvl = dvl; local = local} !funglob
+    funglob := Idmap.add f {retour = Tint;fdvl = dvl} !funglob
   end
 
 let () =
@@ -502,7 +504,7 @@ let () =
   in
   begin
     Hashtbl.add local.var id Tint ;
-    funglob := Idmap.add f {retour = Tpointer Tvoid;fdvl = dvl; local = local} !funglob
+    funglob := Idmap.add f {retour = Tpointer Tvoid;fdvl = dvl} !funglob
   end
 
 (* typage du programe*)
