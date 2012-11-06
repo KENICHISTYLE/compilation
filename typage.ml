@@ -46,36 +46,44 @@ let vdec v env =
     || (Idmap.mem v.node env.structure) 
     || (Idmap.mem v.node env.union)    
   in
+  let msg = " Id already used " ^ v.node 
+  in
   if not (b) then
     false 
   else 
-    error v.loc " Id already used "  
+    error v.loc msg  
 
 let sdec v env =  
   let b = (Hashtbl.mem env.var v.node) 
-    || (Idmap.mem v.node env.structure)    
+    || (Idmap.mem v.node env.structure) 
+  in
+  let msg = " Id already used by var or struct " ^ v.node 
   in
   if not (b)  then
     false 
   else 
-    error v.loc " Id already used by var or struct "  
+    error v.loc msg
 
 let udec v env =  
-let b = (Hashtbl.mem env.var v.node) 
+  let b = (Hashtbl.mem env.var v.node) 
     || (Idmap.mem v.node env.union)   
+  in
+  let msg = " Id already used by var or union " ^ v.node 
   in
   if not (b)  then
     false 
   else 
-    error v.loc " Id already used by var or union "  
+    error v.loc msg 
 
  let fdec v = 
   let b = (Idmap.mem v.node !funglob)    
   in
+  let msg = " Id already used by function " ^ v.node 
+  in
   if not (b) then
     false 
   else 
-    error v.loc " Id already used by function "
+    error v.loc msg
 
 
 let num = function
@@ -407,7 +415,9 @@ and
       test_var env dvl;
       Dvars dvl
 
-    |Dstruct (id,dvl) ->       
+    |Dstruct (id,dvl) ->   
+      let msg = " Struct id '"^ id.node^"' already used "  
+      in    
       let test_struct e dvl =
  	let b,ndvl = test dvl e []
 	in 
@@ -427,10 +437,12 @@ and
 	  begin
 	    try
 	      test_struct glob ndvl
-	    with _ -> error id.loc " Identificator already used"
+	    with _ -> error id.loc msg
 	  end
       end
     |Dunion  (id,dvl) ->
+      let msg = " Union id '"^ id.node^"' already used "  
+      in
       let test_union e dvl =
 	let b,ndvl = test dvl e []
 	in
@@ -450,7 +462,7 @@ and
 	  begin
 	    try 
 	      test_union glob ndvl 
-	    with _ -> error id.loc " Identificator already used"
+	    with _ -> error id.loc msg
 	  end
       end
     |Dfun (t,id,dvl,ibk) -> 
@@ -467,10 +479,12 @@ and
 	  in
 	  let () =
 	    List.iter 
-	      (fun  (t,id) -> 
-		if(tbon t temp) && not(vdec id temp) then
+	      (fun  (t,id) ->
+                let msg = "Id '"^ id.node^"' already used "  
+                in
+		if((tbon t temp)||(tbon t glob)) && not(vdec id temp) then
 		  Hashtbl.add temp.var id.node t
-		else error id.loc " ID already used" ) dvl
+		else error id.loc msg ) dvl
 	  in
 	 
 	  let local = {var = localv ; structure = Idmap.empty ; union = Idmap.empty}
@@ -479,12 +493,14 @@ and
 	    funglob := Idmap.add id.node {retour = t;fdvl = dvl} !funglob;
 	     let nbl = type_block ibk local
 	     in
+             let msg = " Function '"^ id.node^"' return type missmatch "  
+             in
              if(!type_retour = t) then
                let () = type_retour :=  Tvoid
                  in
 	         Dfun (t,id,dvl,nbl)
              else 
-               error id.loc " Function return type missmatch "
+               error id.loc msg
 	  end
 	end
       else error id.loc " Function bad prototype"
