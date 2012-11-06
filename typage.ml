@@ -46,7 +46,7 @@ let vdec v env =
     || (Idmap.mem v.node env.structure) 
     || (Idmap.mem v.node env.union)    
   in
-  let msg = " Id already used " ^ v.node 
+  let msg = " Id already used '" ^ v.node^"'." 
   in
   if not (b) then
     false 
@@ -57,7 +57,7 @@ let sdec v env =
   let b = (Hashtbl.mem env.var v.node) 
     || (Idmap.mem v.node env.structure) 
   in
-  let msg = " Id already used by var or struct " ^ v.node 
+  let msg = " Id already used by var or struct '" ^ v.node ^"'." 
   in
   if not (b)  then
     false 
@@ -68,7 +68,7 @@ let udec v env =
   let b = (Hashtbl.mem env.var v.node) 
     || (Idmap.mem v.node env.union)   
   in
-  let msg = " Id already used by var or union " ^ v.node 
+  let msg = " Id already used by var or union '" ^ v.node^"'."  
   in
   if not (b)  then
     false 
@@ -78,7 +78,7 @@ let udec v env =
  let fdec v = 
   let b = (Idmap.mem v.node !funglob)    
   in
-  let msg = " Id already used by function " ^ v.node 
+  let msg = " Id already used by function '" ^ v.node ^"'." 
   in
   if not (b) then
     false 
@@ -495,7 +495,7 @@ and
 	     in
              let msg = " Function '"^ id.node^"' return type missmatch "  
              in
-             if(!type_retour = t) then
+             if(equal (!type_retour)  t) then
                let () = type_retour :=  Tvoid
                  in
 	         Dfun (t,id,dvl,nbl)
