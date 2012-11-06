@@ -530,7 +530,7 @@ and
 let typage_fichiers  x glob  =  List.map (type_decl glob) x
 
 
-(* ajout des primitives à l'environement globale *************************************************************************)
+(* ajout des primitives Ã  l'environement globale *************************************************************************)
 let () =
   let id = "n"
   in
@@ -559,7 +559,8 @@ let () =
     funglob := Idmap.add f {retour = Tpointer Tvoid;fdvl = dvl} !funglob
   end
 
-(* typage du programe ****************************************************************************************************)
+(* typage du programe ***********************************************************************************************
+*****)
 
 let typage p =   
   let retour = typage_fichiers p glob
