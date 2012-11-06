@@ -7,7 +7,7 @@ struct st {
 } ;
 
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 
@@ -21,6 +21,6 @@ void main ()
  
  v= c + test;
  
- return ;
+ return 1;
 }
 

@@ -7,7 +7,7 @@ struct st {
 } ;
 
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 
@@ -20,5 +20,5 @@ void main ()
  test.haha;
  
  
- return ;
+ return 0;
 }

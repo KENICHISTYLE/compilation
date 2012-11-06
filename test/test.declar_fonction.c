@@ -6,7 +6,7 @@ void f(void x )
 {
 }
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 

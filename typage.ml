@@ -1,5 +1,6 @@
 open Ast
-
+(* AMGHAR Nassim    WAN Dong *)
+(* ./dotest : pour faire les tests*)
 (*************************************** stockage des variables **********************************************) 
 
 type dvlist = var_decl list
@@ -576,14 +577,20 @@ let typage p =
 	|(Tpointer(Tpointer Tchar),{node = "argv"; loc = _ }) ->true 
 	| _ -> false
       in
-      if not (m.fdvl = []) then
+      if(m.retour = Tint) then
 	begin
-	  match m.fdvl with
-	    |a::b::[] ->
-	      if not(is_first_arg a && is_second_arg b) then
-		error (Lexing.dummy_pos,Lexing.dummy_pos) " Main declared with wrong arguments"
-	    |_ -> error (Lexing.dummy_pos,Lexing.dummy_pos) " Main declared with wrong arguments"
+	  if not (m.fdvl = []) then
+	    begin
+	      match m.fdvl with
+		|a::b::[] ->
+		  if not(is_first_arg a && is_second_arg b) then
+		    error (Lexing.dummy_pos,Lexing.dummy_pos) " Main declared with wrong arguments"
+		|_ -> error (Lexing.dummy_pos,Lexing.dummy_pos) " Main declared with wrong arguments"
+	    end
 	end
+      else 
+	error (Lexing.dummy_pos,Lexing.dummy_pos) " Main must have return type INT ."
+	    
     with Not_found -> error (Lexing.dummy_pos,Lexing.dummy_pos) " Main undeclared"
   in 
   begin    

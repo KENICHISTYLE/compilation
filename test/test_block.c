@@ -7,7 +7,7 @@ struct st {
 } ;
 
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 

@@ -10,7 +10,7 @@ struct st {
 } ;
 
 
-void main () 
+int main () 
 {
  // declaration
 	struct st x;

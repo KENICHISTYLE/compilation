@@ -37,7 +37,7 @@ struct s {
 };
 */
 
-void main (int argc,char** argv) 
+int main (int argc,char** argv) 
 {
  // declaration
  int i,j; 

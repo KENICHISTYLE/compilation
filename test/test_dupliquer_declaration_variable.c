@@ -1,7 +1,7 @@
 /*  Fichier de test */
 
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 

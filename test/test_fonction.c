@@ -9,9 +9,9 @@ struct c fun(char k){
 }
 
 
-void main () 
+int main () 
 {
  
- return ;
+ return 0;
 }
 

@@ -4,7 +4,7 @@ void f(void y; )
 
 }
 
-void main () 
+int main () 
 {
  // declaration
  int i,j; 
