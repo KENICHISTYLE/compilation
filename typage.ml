@@ -1,7 +1,6 @@
 open Ast
 
-
-(* stockage des variables*) 
+(*************************************** stockage des variables **********************************************) 
 
 type dvlist = var_decl list
 
@@ -21,9 +20,10 @@ type funt = {retour : c_type ; fdvl : dvlist  }
 let glob = { var =  Hashtbl.create 1007; structure = Idmap.empty ; union = Idmap.empty }
 let funglob =ref Idmap.empty
 
+(******************** ref retour de fonction pour verifier le type*)
+let type_retour = ref Tvoid
 
-
-(* exception  *)
+(******************** exception  *)
 
 exception Type_Error of loc*string 
 
@@ -33,37 +33,49 @@ let error loc msg =
 exception Epoint
 exception Interne
 
-(* fonction annexes*)
+(************************************** fonction annexes **************************************************)
 let tbon t env = 
   match t with
   | Tstruct ident -> (Idmap.mem ident.node (env.structure))
   | Tunion  ident -> (Idmap.mem ident.node (env.union))
   | _ -> true
 
-(* verification de declaration*)
+(************************************************** verification de declaration*)
 let vdec v env = 
-  if not (Hashtbl.mem env.var v.node) then
+  let b = (Hashtbl.mem env.var v.node) 
+    || (Idmap.mem v.node env.structure) 
+    || (Idmap.mem v.node env.union)    
+  in
+  if not (b) then
     false 
   else 
-    error v.loc " Var already declared "  
+    error v.loc " Id already used "  
 
 let sdec v env =  
-  if not (Idmap.mem v.node env.structure )  then
+  let b = (Hashtbl.mem env.var v.node) 
+    || (Idmap.mem v.node env.structure)    
+  in
+  if not (b)  then
     false 
   else 
-    error v.loc " Struct already declared "  
+    error v.loc " Id already used by var or struct "  
 
 let udec v env =  
-  if not (Idmap.mem v.node env.union )  then
+let b = (Hashtbl.mem env.var v.node) 
+    || (Idmap.mem v.node env.union)   
+  in
+  if not (b)  then
     false 
   else 
-    error v.loc " Union already declared "  
+    error v.loc " Id already used by var or union "  
 
-let fdec v =  
-  if not (Idmap.mem v.node !funglob )  then
+ let fdec v = 
+  let b = (Idmap.mem v.node !funglob)    
+  in
+  if not (b) then
     false 
   else 
-    error v.loc " Union already declared "  
+    error v.loc " Id already used by function "
 
 
 let num = function
@@ -102,6 +114,7 @@ let rec equal n1 n2 =
       |_ -> false
   in (intern n1 n2) || (intern n2 n1)
 
+(************* Acces valide*)
 let isaccesvalid e x env = 
   match e with 
     |Tstruct id -> 
@@ -136,7 +149,7 @@ let isaccesvalid e x env =
       end
     |_ -> raise Epoint 
 
-(* valeurs gauches *)
+(********************************** valeurs gauches *)
 
 let is_valeurgauche e env = 
   match e.node with
@@ -145,11 +158,11 @@ let is_valeurgauche e env =
   | Eunop (Ustar,e) -> is_pointer e.loc
   | Edot (e,id)     -> 
     begin
-      try isaccesvalid e.loc id env; true with _ -> false
+      try isaccesvalid e.loc id env; true with _ -> false    
     end
   |_ ->  false
-
-(* expression *)
+(*********************************************************************************************************************)
+(*************************************************************************** expression *)
 let rec type_expr e env =
   let l = e.loc in
   match e.node with
@@ -160,18 +173,22 @@ let rec type_expr e env =
       |Cint x ->if x = Int32.zero then 
 	 {node = Enull; loc = Tnull}
 	else
-	  {node = (Econst c); loc = Tint}   (* a veriffier*)
+	  {node = (Econst c); loc = Tint}  
       |Cstring _->{node = (Econst c); loc = (Tpointer Tchar)}
     end
   |Eident id ->
+    let msg = " ID undifined '" ^id.node^ "'" 
+    in 
     let t = 
       begin
 	try 
 	  Hashtbl.find env.var id.node
 	with Not_found ->
+          begin
 	  try 
 	    Hashtbl.find glob.var id.node
-	  with _ -> error l " ID undefind "
+	  with _ -> error l msg
+          end
       end  
 	in
     {node = (Eident id); loc = t}
@@ -182,7 +199,7 @@ let rec type_expr e env =
   |Edot(e,id) -> 
     let t = (type_expr e env)
     in
-    let tv = try isaccesvalid t.loc id env with _ -> error l " Acces to un excpression without a field"
+    let tv = try isaccesvalid t.loc id env with _ -> error l " Acces to an undifined field of an expression "
     in
     {node = Edot(t,id); loc = tv }  
   
@@ -193,7 +210,7 @@ let rec type_expr e env =
     if (b)&&(equal (t1.loc) (t2.loc)) then   (* creer fonction pour veriffier egalite *)
       {node = Eassign(t1,t2); loc = t1.loc}
     else
-      error l " affectation de type non compatible"
+      error l " Assignation of incompatible type"
   
   |Eunop (op1,e) ->  
     let ex = type_expr e env in 
@@ -204,12 +221,12 @@ let rec type_expr e env =
 	if (b)&&(num ex.loc)  then 
 	  {node = Eunop(op1,ex); loc =  ex.loc} (* increment et decrement*)
 	else
-	  error l " This operator doesn't apply to this type"
+	  error l " This operator doesn't apply to this type, type must be numerique"
       |Uplus |Uminus ->
 	if  (ex.loc = Tint) then
           {node = Eunop(op1,ex); loc = Tint} (* + -  *)
 	else
-	  error l " This operator doesn't apply to this type" 
+	  error l " This operator doesn't apply to this type, type must be int" 
       |Unot ->
 	if (num ex.loc) then
           {node = Eunop(op1,ex); loc = Tint} (* ! *)
@@ -298,10 +315,8 @@ let rec type_expr e env =
 	else error l " No function with this ID"
       with not_found -> error l  " This function is not declared "
     end 
-exception ExpressionNonNumerique
-(* on fait les exception apres just pour compiler *)
 
-(*dans typage instruction on supprimer la location du instruction cas il est pas important apres la phase typage*)
+(*********************************************** typage instructions*)
 let rec typage_instruction env i = (* i avec localisation *)
   let l = i.loc in
   match i.node with 
@@ -356,12 +371,13 @@ let rec typage_instruction env i = (* i avec localisation *)
   begin
     match eo with
     |Some e -> let te = type_expr e env in
-	       { node = Sreturn(Some te);loc = te.loc}
+               let () = type_retour := te.loc in
+	       { node = Sreturn(Some te);loc = te.loc};
     |None -> { node= Sreturn None;loc= Tvoid}
   end
 and
 
-(* typage de block *)
+(********************************* typage de block *)
     type_block x env =
   let list_decl = fst x in
   let list_ins  = snd x in
@@ -371,7 +387,7 @@ and
   ((tlist_decl y),tlist_ins)
 
 and
-(* typage des declaration*)
+(********************************* typage des declaration*)
 
     type_decl env x = 
   let rec test dvl e acc =
@@ -382,18 +398,14 @@ and
   match x with  
     |Dvars dvl ->
       let test_var e list = 
-	List.fold_left 
-	  (fun acc (t,id) -> 
-	    if(tbon t e) && not(vdec id e) then
-	      begin
-	      Hashtbl.add e.var id.node t;
-		acc
-	      end
-	    else acc@[(t,id)] ) [] list
+	List.iter 
+	  (fun  (t,id) -> 
+	    if((tbon t e)||(tbon t glob))&&(t != Tvoid) && not(vdec id e) then	      
+	      Hashtbl.add e.var id.node t		
+	     ) list
       in
-      let loc = test_var env dvl 
-      in
-      test_var glob loc; Dvars dvl
+      test_var env dvl;
+      Dvars dvl
 
     |Dstruct (id,dvl) ->       
       let test_struct e dvl =
@@ -449,7 +461,7 @@ and
 	  && not(fdec id) ) then 
 	begin
 	  let localv = Hashtbl.create 1007 in
-	 let () = Hashtbl.add localv id.node t
+	  let () = Hashtbl.add localv id.node t
 	  in
 	  let temp = {var = localv; structure = env.structure ; union = env.union}
 	  in
@@ -467,18 +479,22 @@ and
 	    funglob := Idmap.add id.node {retour = t;fdvl = dvl} !funglob;
 	     let nbl = type_block ibk local
 	     in
-	    Dfun (t,id,dvl,nbl);
-	   
+             if(!type_retour = t) then
+               let () = type_retour :=  Tvoid
+                 in
+	         Dfun (t,id,dvl,nbl)
+             else 
+               error id.loc " Function return type missmatch "
 	  end
 	end
       else error id.loc " Function bad prototype"
 	
-(*typage des fichiers *)
+(***********************  typage des fichiers *)
 
 let typage_fichiers  x glob  =  List.map (type_decl glob) x
 
 
-(* ajout des primitives à l'environement globale*)
+(* ajout des primitives à l'environement globale *************************************************************************)
 let () =
   let id = "n"
   in
@@ -507,7 +523,7 @@ let () =
     funglob := Idmap.add f {retour = Tpointer Tvoid;fdvl = dvl} !funglob
   end
 
-(* typage du programe*)
+(* typage du programe ****************************************************************************************************)
 
 let typage p =   
   let retour = typage_fichiers p glob

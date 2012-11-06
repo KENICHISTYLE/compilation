@@ -1,8 +1,8 @@
-ast.cmi: 
-parser.cmo: ast.cmi parser.cmi 
-parser.cmx: ast.cmi parser.cmi 
-typage.cmi: ast.cmi 
-typage.cmo: ast.cmi typage.cmi 
-typage.cmx: ast.cmi typage.cmi 
-main.cmo: typage.cmi parser.cmi ast.cmi 
-main.cmx: typage.cmx parser.cmx ast.cmi 
+ast.cmi:
+parser.cmo: ast.cmi parser.cmi
+parser.cmx: ast.cmi parser.cmi
+typage.cmi: ast.cmi
+typage.cmo: ast.cmi typage.cmi
+typage.cmx: ast.cmi typage.cmi
+main.cmo: typage.cmi parser.cmi lexer.cmo ast.cmi
+main.cmx: typage.cmx parser.cmx lexer.cmx ast.cmi
